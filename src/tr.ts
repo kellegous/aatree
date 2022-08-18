@@ -1,5 +1,5 @@
 export namespace tr {
-	const MINSEP = 7;
+	const MINSEP = 1;
 
 	export class Node<T> {
 		constructor(
@@ -59,6 +59,17 @@ export namespace tr {
 
 		isThread(): boolean {
 			return this.thread;
+		}
+
+		*iter(): Iterable<Node<T>> {
+			const { left, right } = this;
+			if (left !== null) {
+				yield* left.iter();
+			}
+			yield this;
+			if (right !== null) {
+				yield* right.iter();
+			}
 		}
 	}
 
