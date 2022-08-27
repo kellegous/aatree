@@ -172,34 +172,56 @@ function render(
 		ctx.stroke();
 	}
 	ctx.restore();
+
+	ctx.save();
+	ctx.fillStyle = '#666';
+	for (const item of root.iter()) {
+		const text = item.info.toLocaleString(),
+			meas = ctx.measureText(text),
+			x = box.left + bc + item.getX() * dw - meas.width / 2,
+			y = box.top + item.getY() * dh + dh / 2 + meas.actualBoundingBoxAscent / 2;
+		ctx.fillText(text, x, y);
+	}
+	ctx.restore();
 }
 
-function makeFullScreen(
+
+function coverWindowWith(
 	el: HTMLCanvasElement,
-) {
+	onResize: (ctx: CanvasRenderingContext2D, w: number, h: number) => void
+): HTMLCanvasElement {
+	const ctx = el.getContext('2d') as CanvasRenderingContext2D;
 	const resize = () => {
-		el.width = window.innerWidth;
-		el.height = window.innerHeight;
+		const w = window.innerWidth,
+			h = window.innerHeight;
+		el.width = w;
+		el.height = h;
+		onResize(ctx, w, h);
 	};
 	window.addEventListener('resize', resize, false);
 	resize();
 	return el;
 }
 
-const aaRoot = Iter.of(range(0, 20))
-	.map(x => (Math.random() * 100) | 0)
-	.reduce(
-		(node, v) => node.insert(v, v),
-		AANode.root()
-	),
-	trRoot = toTRNode(aaRoot),
-	canvas = makeFullScreen(
-		document.querySelector('#canvas') as HTMLCanvasElement
-	);
+function createExampleTree(): AANode<number, number> {
+	const nil = AANode.root<number, number>(),
+		n1 = new AANode<number, number>(1, 1, 1, nil, nil),
+		n3 = new AANode<number, number>(3, 3, 1, nil, nil),
+		n7 = new AANode<number, number>(7, 7, 1, nil, nil),
+		n9 = new AANode<number, number>(9, 9, 1, nil, nil),
+		n14 = new AANode<number, number>(14, 14, 1, nil, nil),
+		n2 = new AANode<number, number>(2, 2, 2, n1, n3),
+		n5 = new AANode<number, number>(5, 5, 1, nil, n7),
+		n12 = new AANode<number, number>(12, 12, 2, n9, n14),
+		n8 = new AANode<number, number>(8, 8, 2, n5, n12);
+	return new AANode<number, number>(4, 4, 3, n2, n8);
+}
 
+const aaRoot = createExampleTree().insert(6, 6),
+	trRoot = toTRNode(aaRoot);
 tr.layout(trRoot);
 
-render(
-	canvas.getContext('2d') as CanvasRenderingContext2D,
-	trRoot as tr.Node<number>
+coverWindowWith(
+	document.querySelector('#canvas') as HTMLCanvasElement,
+	(ctx, w, h) => render(ctx, trRoot as tr.Node<number>),
 );

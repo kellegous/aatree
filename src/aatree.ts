@@ -3,11 +3,11 @@ export class AANode<K, V> {
 	private right: AANode<K, V>;
 
 	constructor(
-		private level: number,
-		left: AANode<K, V> | null,
-		right: AANode<K, V> | null,
 		public readonly key: K,
 		public readonly val: V,
+		private level: number,
+		left: AANode<K, V> | null = null,
+		right: AANode<K, V> | null = null,
 	) {
 		this.left = left ?? this;
 		this.right = right ?? this;
@@ -23,11 +23,14 @@ export class AANode<K, V> {
 
 	insert(key: K, val: V): AANode<K, V> {
 		if (this.isNil()) {
-			return new AANode<K, V>(1, NIL, NIL, key, val);
-		} else if (this.key < key) {
+			return new AANode<K, V>(key, val, 1, NIL, NIL);
+		} else if (key < this.key) {
+			this.left = this.left.insert(key, val);
+		} else if (key > this.key) {
 			this.right = this.right.insert(key, val);
 		} else {
-			this.left = this.left.insert(key, val);
+			// TODO(knorton): fixme
+			throw new Error(`key ${key} exists`);
 		}
 		return this.skew().split();
 	}
@@ -37,30 +40,24 @@ export class AANode<K, V> {
 	}
 
 	private skew(): AANode<K, V> {
-		let root: AANode<K, V> = this;
-		if (root.level !== 0) {
-			if (root.left.level === root.level) {
-				const save: AANode<K, V> = root;
-				root = root.left;
-				save.left = root.right;
-				root.right = save;
-			}
-			root.right = root.right.skew();
+		if (this.left.level === this.level) {
+			const q = this.left;
+			this.left = q.right;
+			q.right = this;
+			return q;
 		}
-		return root;
+		return this;
 	}
 
 	private split(): AANode<K, V> {
-		let root: AANode<K, V> = this;
-		if (root.right.level === root.level && root.level !== 0) {
-			const save: AANode<K, V> = root;
-			root = root.right;
-			save.right = root.left;
-			root.left = save;
-			root.level++;
-			root.right = root.right.split();
+		if (this.right.right.level === this.level) {
+			const q = this.right;
+			this.right = q.left;
+			q.left = this;
+			q.level++;
+			return q;
 		}
-		return root;
+		return this;
 	}
 
 	static root<K, V>(): AANode<K, V> {
@@ -68,5 +65,5 @@ export class AANode<K, V> {
 	}
 }
 
-const NIL = new AANode<any, any>(0, null, null, null, null);
+const NIL = new AANode<any, any>(null, null, 0);
 
