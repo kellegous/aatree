@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "kellegous/aatree/node.h"
+#include "aatree/node.h"
 
 using kellegous::aatree::Node;
 
